@@ -4,6 +4,8 @@ A complete rescue command center built with **HTML, CSS, and JavaScript**, packa
 
 No Python and no backend framework are required. The browser build uses a tiny zero-dependency Node static server; the desktop build wraps the same app in Electron.
 
+> **Live web demo:** <https://jeffersonban08-wq.github.io/resqcoord-command-center/>
+>
 > **Download the Windows app:** [Releases](https://github.com/jeffersonban08-wq/resqcoord-command-center/releases) — `ResQCoord-Portable-1.0.0.exe` (no install) or `ResQCoord-Setup-1.0.0.exe` (installer). Desktop build instructions are in [DESKTOP.md](DESKTOP.md).
 
 ![ResQCoord admin overview](docs/screenshots/admin-overview.jpg)
@@ -27,13 +29,17 @@ Everything is client-side. The tiny `server.js` only serves static files so `htt
 
 ## 2. Quick start
 
-### Option A — Windows desktop app (recommended)
+### Option A — Hosted web version (fastest)
+
+Open **<https://jeffersonban08-wq.github.io/resqcoord-command-center/>** in any modern browser. Nothing to install. The site is served over HTTPS, so real GPS works once you allow location permission.
+
+### Option B — Windows desktop app (recommended offline)
 
 Download the portable **`ResQCoord-Portable-1.0.0.exe`** or the installer **`ResQCoord-Setup-1.0.0.exe`** from **Releases**, then run it. Node.js is not needed.
 
 > The app is not code-signed, so Windows SmartScreen may warn once: **More info → Run anyway**.
 
-### Option B — Desktop from source
+### Option C — Desktop from source
 
 ```bat
 npm install
@@ -48,7 +54,7 @@ npm run dist
 
 Output goes to `release\`.
 
-### Option C — Browser version
+### Option D — Browser version from source
 
 ```bat
 node server.js
@@ -56,7 +62,7 @@ node server.js
 
 Open <http://localhost:3000>. Use a custom port with `node server.js 8080`.
 
-### Option D — VS Code Live Server
+### Option E — VS Code Live Server
 
 1. Open this folder in VS Code.
 2. Install the **Live Server** extension.
