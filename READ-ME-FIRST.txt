@@ -6,8 +6,8 @@ This repository contains both the browser app and the Electron desktop wrapper.
 DOWNLOAD THE READY-TO-RUN APP
 -----------------------------
 Use the repository's Releases page:
-  ResQCoord 1.0.0.exe        portable app (no install)
-  ResQCoord Setup 1.0.0.exe  installer with shortcuts
+  ResQCoord-Portable-1.0.0.exe   portable app (no install)
+  ResQCoord-Setup-1.0.0.exe      installer with shortcuts
 
 FASTEST WAY TO RUN FROM SOURCE
 ------------------------------

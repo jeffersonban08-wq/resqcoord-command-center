@@ -4,7 +4,7 @@ A complete rescue command center built with **HTML, CSS, and JavaScript**, packa
 
 No Python and no backend framework are required. The browser build uses a tiny zero-dependency Node static server; the desktop build wraps the same app in Electron.
 
-> **Download the Windows app:** see this repository's **Releases** page for the portable `.exe` and installer. Desktop build instructions are in [DESKTOP.md](DESKTOP.md).
+> **Download the Windows app:** [Releases](https://github.com/jeffersonban08-wq/resqcoord-command-center/releases) — `ResQCoord-Portable-1.0.0.exe` (no install) or `ResQCoord-Setup-1.0.0.exe` (installer). Desktop build instructions are in [DESKTOP.md](DESKTOP.md).
 
 ![ResQCoord admin overview](docs/screenshots/admin-overview.jpg)
 
@@ -29,7 +29,7 @@ Everything is client-side. The tiny `server.js` only serves static files so `htt
 
 ### Option A — Windows desktop app (recommended)
 
-Download the portable **`ResQCoord 1.0.0.exe`** or the installer from **Releases**, then run it. Node.js is not needed.
+Download the portable **`ResQCoord-Portable-1.0.0.exe`** or the installer **`ResQCoord-Setup-1.0.0.exe`** from **Releases**, then run it. Node.js is not needed.
 
 > The app is not code-signed, so Windows SmartScreen may warn once: **More info → Run anyway**.
 

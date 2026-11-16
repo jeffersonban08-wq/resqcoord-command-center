@@ -6,8 +6,8 @@ This repository contains both the browser app and the Electron desktop wrapper.
 
 Use the repository's **Releases** page:
 
-- `ResQCoord 1.0.0.exe` — portable app, no installation
-- `ResQCoord Setup 1.0.0.exe` — installer with shortcuts
+- `ResQCoord-Portable-1.0.0.exe` — portable app, no installation
+- `ResQCoord-Setup-1.0.0.exe` — installer with shortcuts
 
 The build is not code-signed, so Windows SmartScreen may warn once. Choose **More info → Run anyway**.
 
