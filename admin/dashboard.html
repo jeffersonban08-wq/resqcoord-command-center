@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Command Dashboard — ResQCoord</title>
+  <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+  <style>
+    .leaflet-tile-pane { filter: brightness(0.7) saturate(0.72) contrast(1.12); }
+    .admin-map-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 16px;
+      align-items: start;
+    }
+    .admin-side-stack { display: flex; flex-direction: column; gap: 14px; }
+    .team-card {
+      width: 100%;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line-soft);
+      border-left: 2px solid transparent;
+      transition: 0.14s;
+      cursor: pointer;
+    }
+    .team-card:last-child { border-bottom: 0; }
+    .team-card:hover { background: rgba(21, 36, 56, 0.5); }
+    .team-card.selected {
+      background: rgba(167, 139, 250, 0.08);
+      border-left-color: var(--purple);
+    }
+    .team-card .tc-body { flex: 1; min-width: 0; }
+    .team-card .tc-name { font-size: 12px; font-weight: 650; color: var(--text); }
+    .team-card .tc-sub { font-size: 10px; color: var(--muted-2); margin-top: 2px; }
+    .team-card .tc-right { text-align: right; flex: 0 0 auto; }
+    .team-card .tc-right b { display: block; font-size: 10.5px; color: var(--muted); }
+    .team-card .tc-right span { font-size: 9px; color: var(--muted-2); }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; margin-right: 5px;
+      background: var(--muted-2);
+    }
+    .status-dot.onsite { background: var(--accent); }
+    .status-dot.enroute { background: var(--warn); }
+    .status-dot.standby { background: var(--accent-2); }
+    .status-dot.sos { background: var(--danger); animation: pulseRingRed 1.6s infinite; }
+    .mini-stat-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .mini-stat {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #0a1522;
+      padding: 12px;
+    }
+    .mini-stat .ms-label {
+      font-size: 9px; letter-spacing: 1.1px; text-transform: uppercase;
+      color: var(--muted-2); font-weight: 700;
+    }
+    .mini-stat .ms-value {
+      font-size: 22px; font-weight: 720; letter-spacing: -0.7px; margin-top: 4px;
+    }
+    .mini-stat .ms-foot { font-size: 10px; color: var(--muted-2); margin-top: 2px; }
+    .severity-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 9px; font-weight: 800; letter-spacing: 0.7px;
+      text-transform: uppercase; border-radius: 5px; padding: 3px 6px;
+    }
+    .severity-pill.Low { background: var(--accent-dim); color: var(--accent); }
+    .severity-pill.Medium { background: var(--warn-dim); color: var(--warn); }
+    .severity-pill.High { background: rgba(255, 158, 92, 0.12); color: #ff9e5c; }
+    .severity-pill.Critical { background: var(--danger-dim); color: var(--danger); }
+    .admin-detail-list { display: flex; flex-direction: column; }
+    .admin-detail-list .kv { font-size: 11px; }
+    @media (max-width: 1180px) {
+      .admin-map-layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      .mini-stat-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app admin-scope" id="app">
+    <!-- ==================== SIDEBAR ==================== -->
+    <aside class="sidebar" aria-label="Administrator navigation">
+      <div class="sidebar-head">
+        <a class="brand" href="../index.html">
+          <span class="brand-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z"/><path d="M12 7v6M9 10h6"/>
+            </svg>
+          </span>
+          <span class="brand-text">
+            <span class="brand-name">ResQ<em>Coord</em></span>
+            <span class="brand-sub">Command Center</span>
+          </span>
+        </a>
+        <div class="sidebar-scope admin"><span class="dot"></span> Admin view · Command</div>
+      </div>
+
+      <nav class="side-nav" aria-label="Command sections">
+        <div class="nav-label">Operations</div>
+        <button class="nav-item active" data-view="overview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Overview
+        </button>
+        <button class="nav-item" data-view="map">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+          Live Map
+          <span class="count neutral" id="mapTeamCount">0</span>
+        </button>
+        <button class="nav-item" data-view="missions">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="m9 11 3 3L22 4"/></svg>
+          Missions
+        </button>
+        <button class="nav-item" data-view="personnel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Personnel
+        </button>
+        <button class="nav-item" data-view="incidents">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Incidents
+          <span class="count" id="incidentNavCount" style="display:none">0</span>
+        </button>
+        <button class="nav-item" data-view="messages">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg>
+          Broadcast
+        </button>
+
+        <div class="nav-label">Insight</div>
+        <button class="nav-item" data-view="reports">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-5"/></svg>
+          Reports
+        </button>
+        <button class="nav-item" data-view="audit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>
+          Activity Log
+        </button>
+        <button class="nav-item" data-view="settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+          Settings
+        </button>
+
+        <div class="nav-label">Quick actions</div>
+        <button class="nav-item" data-action="newMission">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          New mission
+        </button>
+        <button class="nav-item" data-action="broadcast">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1a10 10 0 0 1 0-14.2"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4"/><path d="M19.1 4.9a10 10 0 0 1 0 14.2"/></svg>
+          Broadcast
+        </button>
+        <button class="nav-item" data-action="addPersonnel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+          Add responder
+        </button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="side-user" id="sideUser" role="button" tabindex="0">
+          <div class="avatar" id="sidebarAvatar" style="background:#251d3d;border-color:#45336b;color:var(--purple)">CM</div>
+          <div class="meta">
+            <div class="name" id="sidebarName">Carl R. Miller</div>
+            <div class="role" id="sidebarRole">Administrator · Duty Commander</div>
+          </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ==================== MAIN ==================== -->
+    <div class="main-wrap">
+      <div class="offline-banner" id="offlineBanner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        You are offline. Map tiles and road routing need a connection — the local command database and live team tracking still work.
+      </div>
+
+      <header class="topbar">
+        <button class="btn-icon mobile-toggle" id="sidebarToggle" aria-label="Open navigation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div class="crumb">
+          <span>Command</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          <b id="crumb">Overview</b>
+          <span class="badge badge-purple" style="height:20px;font-size:9px">ADMIN</span>
+        </div>
+        <div class="topbar-spacer"></div>
+        <div class="topbar-status">
+          <span class="sync-mini" title="Last database sync">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/></svg>
+            <span id="lastSync">Synced just now</span>
+          </span>
+          <span class="net-status" id="netStatus"><span class="dot"></span> Online</span>
+          <div class="topbar-user">
+            <div class="meta">
+              <div class="name" id="topName">Carl R. Miller</div>
+              <div class="role" id="topRole">Duty Commander</div>
+            </div>
+            <div class="avatar" id="topAvatar" style="background:#251d3d;border-color:#45336b;color:var(--purple)">CM</div>
+            <button class="btn-icon" data-action="logout" title="Sign out" aria-label="Sign out">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="main">
+        <!-- ==================== OVERVIEW ==================== -->
+        <section class="view active" id="view-overview">
+          <div class="view-head">
+            <div>
+              <div class="title-row">
+                <h1>Command Overview</h1>
+                <span class="badge badge-purple">Administrator</span>
+              </div>
+              <div class="sub">
+                <span>Mt. Lantin operational area</span>
+                <span class="sep">·</span>
+                <span id="overviewClock">--:-- PHT</span>
+                <span class="sep">·</span>
+                <span class="row" style="gap:5px"><span class="pulse-dot"></span> Live command sync</span>
+              </div>
+            </div>
+            <div class="view-actions">
+              <button class="btn" data-action="broadcast">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1a10 10 0 0 1 0-14.2"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4"/><path d="M19.1 4.9a10 10 0 0 1 0 14.2"/></svg>
+                Broadcast
+              </button>
+              <button class="btn btn-primary" data-action="newMission">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                New mission
+              </button>
+            </div>
+          </div>
+
+          <div class="kpis">
+            <div class="kpi">
+              <div class="kpi-top">
+                <span class="kpi-label">Active missions</span>
+                <span class="kpi-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="m9 11 3 3L22 4"/></svg></span>
+              </div>
+              <div class="kpi-value"><span id="kpiActiveMissions">0</span><small>open</small></div>
+              <div class="kpi-foot" id="kpiActiveMissionsFoot"><span class="up">—</span> in progress</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-top">
+                <span class="kpi-label">Teams deployed</span>
+                <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>
+              </div>
+              <div class="kpi-value"><span id="kpiTeams">0</span><small>teams</small></div>
+              <div class="kpi-foot" id="kpiTeamsFoot"><span class="up">—</span> personnel tracked</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-top">
+                <span class="kpi-label">Open incidents</span>
+                <span class="kpi-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+              </div>
+              <div class="kpi-value"><span id="kpiIncidents">0</span><small>unresolved</small></div>
+              <div class="kpi-foot" id="kpiIncidentsFoot"><span class="warn">—</span> critical priority</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-top">
+                <span class="kpi-label">Personnel on duty</span>
+                <span class="kpi-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+              </div>
+              <div class="kpi-value"><span id="kpiPersonnel">0</span><small>responders</small></div>
+              <div class="kpi-foot" id="kpiPersonnelFoot"><span class="up">—</span> active accounts</div>
+            </div>
+          </div>
+
+          <div class="dash-grid">
+            <div class="stack">
+              <div class="card map-card">
+                <div class="card-head">
+                  <h3>All-team live map <span class="badge badge-purple" style="height:20px;font-size:9px">Command view</span></h3>
+                  <button class="btn btn-sm btn-ghost" data-view-link="map">Open command map</button>
+                </div>
+                <div class="map-shell" style="height:380px">
+                  <div class="map" id="overviewMap"></div>
+                  <div class="map-overlay-head">
+                    <span class="map-pill"><span class="live-dot"></span> Live · 2.6 s refresh</span>
+                    <span class="map-pill" id="overviewMapBadge">0 teams tracked</span>
+                  </div>
+                  <div class="map-overlay-foot">
+                    <span class="map-coords">16.40370, 120.60120 · <b>Mt. Lantin</b></span>
+                    <span class="map-legend">
+                      <span><i class="lg-onsite"></i> On site</span>
+                      <span><i class="lg-enroute"></i> En route</span>
+                      <span><i class="lg-standby"></i> Standby</span>
+                      <span><i class="lg-sos"></i> SOS</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head">
+                  <h3>Active missions</h3>
+                  <span class="hint" id="overviewMissionMeta">—</span>
+                </div>
+                <div class="table-wrap">
+                  <table class="data">
+                    <thead>
+                      <tr><th>Mission</th><th>Status</th><th>Priority</th><th>Lead / team</th><th>Progress</th><th style="text-align:right">Action</th></tr>
+                    </thead>
+                    <tbody id="overviewMissionRows"><tr><td colspan="6"><div class="empty">Loading missions…</div></td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="stack">
+              <div class="card">
+                <div class="card-head">
+                  <h3>Command alerts</h3>
+                  <span class="badge badge-red" id="alertCount">0</span>
+                </div>
+                <div class="side-list" id="alertList"><div class="empty">Loading alerts…</div></div>
+              </div>
+
+              <div class="card">
+                <div class="card-head">
+                  <h3>Team status</h3>
+                  <button class="btn btn-sm btn-ghost" data-view-link="map">View map</button>
+                </div>
+                <div id="overviewTeams" class="side-list"><div class="empty">Loading teams…</div></div>
+              </div>
+
+              <div class="card">
+                <div class="card-head">
+                  <h3>Quick command</h3>
+                  <span class="hint">Admin tools</span>
+                </div>
+                <div class="card-body">
+                  <div class="quick-grid">
+                    <button class="quick-btn" data-action="newMission">
+                      <span class="qi purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span>
+                      <span><b>New mission</b><small>Dispatch a team</small></span>
+                    </button>
+                    <button class="quick-btn" data-action="broadcast">
+                      <span class="qi blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1a10 10 0 0 1 0-14.2"/><path d="M7.8 16.2a6 6 0 0 1 0-8.4"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8a6 6 0 0 1 0 8.4"/><path d="M19.1 4.9a10 10 0 0 1 0 14.2"/></svg></span>
+                      <span><b>Broadcast</b><small>All teams</small></span>
+                    </button>
+                    <button class="quick-btn" data-view-link="incidents">
+                      <span class="qi amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+                      <span><b>Incidents</b><small>Triage queue</small></span>
+                    </button>
+                    <button class="quick-btn" data-view-link="reports">
+                      <span class="qi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-5"/></svg></span>
+                      <span><b>Reports</b><small>Export CSV</small></span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head">
+                  <h3>Recent activity</h3>
+                  <button class="btn btn-sm btn-ghost" data-view-link="audit">Audit log</button>
+                </div>
+                <div id="overviewActivity" class="side-list"><div class="empty">Loading activity…</div></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== LIVE MAP ==================== -->
+        <section class="view" id="view-map">
+          <div class="view-head">
+            <div>
+              <div class="title-row">
+                <h1>Command Map</h1>
+                <span class="badge badge-purple">All teams</span>
+              </div>
+              <div class="sub">
+                <span>Mt. Lantin operational area</span>
+                <span class="sep">·</span>
+                <span id="mapClock">--:-- PHT</span>
+                <span class="sep">·</span>
+                <span id="mapSelectedLabel">No team selected</span>
+              </div>
+            </div>
+            <div class="view-actions">
+              <button class="btn" id="fitTeamsBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/></svg>
+                Fit all teams
+              </button>
+              <button class="btn" id="toggleTrailsBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>
+                Trails
+              </button>
+              <button class="btn btn-primary" data-action="broadcast">Broadcast</button>
+            </div>
+          </div>
+
+          <div class="admin-map-layout">
+            <div class="card map-card">
+              <div class="map-shell tall" style="height:640px">
+                <div class="map" id="adminMap"></div>
+                <div class="map-overlay-head">
+                  <span class="map-pill"><span class="live-dot"></span> Live tracking</span>
+                  <div class="map-tools">
+                    <button class="map-tool active" data-layer="streets">Streets</button>
+                    <button class="map-tool" data-layer="satellite">Satellite</button>
+                    <button class="map-tool" data-layer="terrain">Terrain</button>
+                    <button class="map-tool active" id="sectorsToggle">Sectors</button>
+                  </div>
+                </div>
+                <div class="map-overlay-foot">
+                  <span class="map-coords" id="mapCoords">16.40370, 120.60120</span>
+                  <span class="map-legend">
+                    <span><i class="lg-onsite"></i> On site</span>
+                    <span><i class="lg-enroute"></i> En route</span>
+                    <span><i class="lg-standby"></i> Standby</span>
+                    <span><i class="lg-sos"></i> SOS</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="admin-side-stack">
+              <div class="card">
+                <div class="card-head">
+                  <h3>Deployed teams</h3>
+                  <span class="hint" id="mapTeamHint">0 tracked</span>
+                </div>
+                <div class="card-body" style="padding:11px 12px">
+                  <div class="field" style="margin-bottom:8px">
+                    <input class="input" id="teamSearch" placeholder="Search team, lead or sector" style="height:33px;font-size:11.5px">
+                  </div>
+                  <div class="filters">
+                    <select class="select" id="teamFilter" aria-label="Filter teams by status">
+                      <option value="">All statuses</option>
+                      <option value="onsite">On site</option>
+                      <option value="enroute">En route</option>
+                      <option value="standby">Standby</option>
+                      <option value="sos">SOS</option>
+                    </select>
+                  </div>
+                </div>
+                <div id="adminTeamList" class="side-list"><div class="empty">Loading teams…</div></div>
+              </div>
+
+              <div class="card" id="teamDetailCard">
+                <div class="card-head">
+                  <h3>Team detail</h3>
+                  <span class="badge badge-muted" id="detailStatus">—</span>
+                </div>
+                <div class="card-body">
+                  <div class="profile-strip" style="margin-bottom:12px">
+                    <div class="team-avatar purple" id="detailMonogram" style="width:38px;height:38px">—</div>
+                    <div class="meta">
+                      <div class="n" id="detailName">Select a team</div>
+                      <div class="r" id="detailSector">Click a team on the map or list</div>
+                    </div>
+                  </div>
+                  <div class="admin-detail-list">
+                    <div class="kv"><span class="k">Lead</span><span class="v" id="detailLead">—</span></div>
+                    <div class="kv"><span class="k">Personnel</span><span class="v" id="detailMembers">—</span></div>
+                    <div class="kv"><span class="k">Speed</span><span class="v" id="detailSpeed">—</span></div>
+                    <div class="kv"><span class="k">Battery</span><span class="v" id="detailBattery">—</span></div>
+                    <div class="kv"><span class="k">Last update</span><span class="v" id="detailUpdated">—</span></div>
+                    <div class="kv"><span class="k">Coordinates</span><span class="v mono" id="detailCoords">—</span></div>
+                  </div>
+                  <div class="row wrap" style="margin-top:11px;gap:6px">
+                    <button class="btn btn-sm" id="detailFocus">Focus</button>
+                    <button class="btn btn-sm btn-ghost" id="detailTrail">Show trail</button>
+                    <button class="btn btn-sm btn-ghost" id="detailClearTrail">Clear trail</button>
+                    <button class="btn btn-sm btn-danger" id="detailSos">Clear SOS</button>
+                  </div>
+                  <div class="divider" style="margin:13px 0"></div>
+                  <div class="field">
+                    <label for="assignTarget">Assign a destination</label>
+                    <select class="select" id="assignTarget"></select>
+                  </div>
+                  <div class="row" style="gap:6px;margin-top:8px">
+                    <button class="btn btn-primary btn-sm" id="assignRouteBtn" style="flex:1">Route team</button>
+                    <button class="btn btn-sm btn-ghost" id="clearRouteBtn">Clear</button>
+                  </div>
+                  <div class="field-hint" id="assignResult" style="margin-top:8px">Routes are drawn on the command map.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== MISSIONS ==================== -->
+        <section class="view" id="view-missions">
+          <div class="view-head">
+            <div>
+              <div class="title-row">
+                <h1>Missions</h1>
+                <span class="badge badge-purple" id="missionBadge">0 active</span>
+              </div>
+              <div class="sub">
+                <span>Dispatch, monitor and close operations</span>
+                <span class="sep">·</span>
+                <span id="missionsClock">--:-- PHT</span>
+              </div>
+            </div>
+            <div class="view-actions">
+              <button class="btn" id="exportMissionsBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+                Export CSV
+              </button>
+              <button class="btn btn-primary" data-action="newMission">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                New mission
+              </button>
+            </div>
+          </div>
+
+          <div class="mini-stat-row" style="margin-bottom:16px">
+            <div class="mini-stat"><div class="ms-label">Active</div><div class="ms-value" id="missionActiveCount">0</div><div class="ms-foot">In progress missions</div></div>
+            <div class="mini-stat"><div class="ms-label">Monitoring</div><div class="ms-value" id="missionMonitoringCount">0</div><div class="ms-foot">Watch list</div></div>
+            <div class="mini-stat"><div class="ms-label">Completed</div><div class="ms-value" id="missionCompletedCount">0</div><div class="ms-foot">Closed missions</div></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h3>Mission register</h3>
+              <div class="filters">
+                <input class="input" id="missionSearch" placeholder="Search mission, code or lead">
+                <select class="select" id="missionStatusFilter">
+                  <option value="">All statuses</option>
+                  <option value="In progress">In progress</option>
+                  <option value="Monitoring">Monitoring</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Planned">Planned</option>
+                </select>
+                <select class="select" id="missionPriorityFilter">
+                  <option value="">All priorities</option>
+                  <option value="Critical">Critical</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr><th>Mission</th><th>Status</th><th>Priority</th><th>Lead / team</th><th>Progress</th><th>Started</th><th style="text-align:right">Actions</th></tr>
+                </thead>
+                <tbody id="missionRows"><tr><td colspan="7"><div class="empty">Loading missions…</div></td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== PERSONNEL ==================== -->
+        <section class="view" id="view-personnel">
+          <div class="view-head">
+            <div>
+              <div class="title-row">
+                <h1>Personnel</h1>
+                <span class="badge badge-purple">Accounts & teams</span>
+              </div>
+              <div class="sub">
+                <span>Responder accounts, roles and deployment</span>
+                <span class="sep">·</span>
+                <span id="personnelClock">--:-- PHT</span>
+              </div>
+            </div>
+            <div class="view-actions">
+              <button class="btn" id="exportPersonnelBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+                Export CSV
+              </button>
+              <button class="btn btn-primary" data-action="addPersonnel">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+                Add responder
+              </button>
+            </div>
+          </div>
+
+          <div class="mini-stat-row" style="margin-bottom:16px">
+            <div class="mini-stat"><div class="ms-label">Total accounts</div><div class="ms-value" id="personnelTotal">0</div><div class="ms-foot">Responders + admins</div></div>
+            <div class="mini-stat"><div class="ms-label">Field responders</div><div class="ms-value" id="personnelField">0</div><div class="ms-foot">Active field accounts</div></div>
+            <div class="mini-stat"><div class="ms-label">Suspended</div><div class="ms-value" id="personnelSuspended">0</div><div class="ms-foot">Access revoked</div></div>
+          </div>
+
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-head">
+              <h3>Account register</h3>
+              <div class="filters">
+                <input class="input" id="personnelSearch" placeholder="Search name, email or ID">
+                <select class="select" id="personnelRoleFilter">
+                  <option value="">All roles</option>
+                  <option value="user">Responder</option>
+                  <option value="admin">Administrator</option>
+                </select>
+                <select class="select" id="personnelStatusFilter">
+                  <option value="">All statuses</option>
+                  <option value="active">Active</option>
+                  <option value="suspended">Suspended</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr><th>Account</th><th>Role</th><th>Team</th><th>Responder ID</th><th>Status</th><th>Last login</th><th style="text-align:right">Actions</th></tr>
+                </thead>
+                <tbody id="personnelRows"><tr><td colspan="7"><div class="empty">Loading personnel…</div></td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h3>Team roster</h3>
+              <span class="hint">Live team summary</span>
+            </div>
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr><th>Team</th><th>Kind</th><th>Lead</th><th>Personnel</th><th>Sector</th><th>Status</th><th>Last check-in</th></tr>
+                </thead>
+                <tbody id="teamRosterRows"><tr><td colspan="7"><div class="empty">Loading teams…</div></td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== INCIDENTS ==================== -->
+        <section class="view" id="view-incidents">
+          <div class="view-head">
+            <div>
+              <div class="title-row">
+                <h1>Incident Triage</h1>
+                <span class="badge badge-red" id="incidentBadge">0 open</span>
+              </div>
+              <div class="sub">
+                <span>Field reports and SOS alerts</span>
+                <span class="sep">·</span>
+                <span id="incidentsClock">--:-- PHT</span>
+              </div>
+            </div>
+            <div class="view-actions">
+              <button class="btn" id="exportIncidentsBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+                Export CSV
+              </button>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-head">
+              <h3>Triage queue</h3>
+              <div class="filters">
+                <input class="input" id="incidentSearch" placeholder="Search incident, reporter or sector">
+                <select class="select" id="incidentSeverityFilter">
+                  <option value="">All severities</option>
+                  <option value="Critical">Critical</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+                <select class="select" id="incidentStatusFilter">
+                  <option value="">All states</option>
+                  <option value="open">Open</option>
+                  <option value="acknowledged">Acknowledged</option>
+                  <option value="escalated">Escalated</option>
+                  <option value="resolved">Resolved</option>
+                </select>
+              </div>
+            </div>
+            <div class="card-body" style="padding:0">
+              <div id="incidentList" class="side-list"><div class="empty">Loading incidents…</div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== MESSAGES ==================== -->
+        <section class="view" id="view-messages">
+          <div class="view-head">
+            <div>
+              <div class="title-row">
+                <h1>Broadcast & Traffic</h1>
+                <span class="badge badge-purple">Command channel</span>
+              </div>
+              <div class="sub">
+                <span>Send instructions and monitor field traffic</span>
+                <span class="sep">·</span>
+                <span id="messagesClock">--:-- PHT</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="page-grid wide-left">
+            <div class="stack">
+              <div class="card">
+                <div class="card-head">
+                  <h3>Command broadcast</h3>
+                  <span class="hint">Delivered instantly to every open dashboard</span>
+                </div>
+                <div class="card-body">
+                  <form id="broadcastForm">
+                    <div class="form-grid cols-2">
+                      <div class="field">
+                        <label for="broadcastChannel">Channel</label>
+                        <select class="select" id="broadcastChannel">
+                          <option value="command">Command · all teams</option>
+                        </select>
+                      </div>
+                      <div class="field">
+                        <label for="broadcastPriority">Priority</label>
+                        <select class="select" id="broadcastPriority">
+                          <option value="normal">Normal</option>
+                          <option value="urgent">Urgent</option>
+                          <option value="emergency">Emergency</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="field">
+                      <label for="broadcastInput">Message</label>
+                      <textarea class="input" id="broadcastInput" rows="3" maxlength="500" placeholder="e.g. Team Alpha, advance to ridge marker and report on arrival."></textarea>
+                      <div class="row between" style="margin-top:5px">
+                        <span class="field-hint" id="broadcastCount">0 / 500 characters</span>
+                        <span class="field-hint">Signed as <b id="broadcastSender">Command Center</b></span>
+                      </div>
+                    </div>
+                    <div class="row between" style="margin-top:12px">
+                      <div class="filters">
+                        <button class="btn btn-sm" type="button" data-template="advance">Advance</button>
+                        <button class="btn btn-sm" type="button" data-template="checkin">Check-in</button>
+                        <button class="btn btn-sm" type="button" data-template="weather">Weather</button>
+                        <button class="btn btn-sm" type="button" data-template="sos">Emergency</button>
+                      </div>
+                      <button class="btn btn-primary" type="submit">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                        Send broadcast
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head">
+                  <h3>Command channel</h3>
+                  <span class="badge badge-blue" id="broadcastFeedCount">0 messages</span>
+                </div>
+                <div id="broadcastFeed" class="side-list" style="max-height:440px;overflow:auto"><div class="empty">Loading channel…</div></div>
+              </div>
+            </div>
+
+            <div class="stack">
+              <div class="card">
+                <div class="card-head">
+                  <h3>Team traffic</h3>
+                  <span class="hint">Latest field messages</span>
+                </div>
+                <div id="teamTraffic" class="side-list" style="max-height:520px;overflow:auto"><div class="empty">Loading traffic…</div></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== REPORTS ==================== -->
+        <section class="view" id="view-reports">
+          <div class="view-head">
+            <div>
+              <div class="title-row">
+                <h1>Reports</h1>
+                <span class="badge badge-purple">Operational insight</span>
+              </div>
+              <div class="sub">
+                <span>Mission load, incident mix and team readiness</span>
+                <span class="sep">·</span>
+                <span id="reportsClock">--:-- PHT</span>
+              </div>
+            </div>
+            <div class="view-actions">
+              <select class="select" id="reportRange" style="height:37px">
+                <option value="7">Last 7 days</option>
+                <option value="30" selected>Last 30 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="all">All data</option>
+              </select>
+              <button class="btn btn-primary" id="exportAllDataBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+                Export snapshot
+              </button>
+            </div>
+          </div>
+
+          <div class="kpis">
+            <div class="kpi">
+              <div class="kpi-top"><span class="kpi-label">Missions</span><span class="kpi-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="m9 11 3 3L22 4"/></svg></span></div>
+              <div class="kpi-value"><span id="reportMissions">0</span><small>total</small></div>
+              <div class="kpi-foot"><span class="up" id="reportMissionsActive">0</span> active now</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-top"><span class="kpi-label">Incidents</span><span class="kpi-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span></div>
+              <div class="kpi-value"><span id="reportIncidents">0</span><small>reported</small></div>
+              <div class="kpi-foot"><span class="warn" id="reportIncidentsOpen">0</span> unresolved</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-top"><span class="kpi-label">Check-ins</span><span class="kpi-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span></div>
+              <div class="kpi-value"><span id="reportCheckins">0</span><small>records</small></div>
+              <div class="kpi-foot"><span class="up" id="reportCheckinsToday">0</span> today</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-top"><span class="kpi-label">Team readiness</span><span class="kpi-icon amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg></span></div>
+              <div class="kpi-value"><span id="reportReadiness">0</span><small>%</small></div>
+              <div class="kpi-foot"><span class="up" id="reportTeamsReady">0</span> teams ready</div>
+            </div>
+          </div>
+
+          <div class="dash-grid">
+            <div class="stack">
+              <div class="card">
+                <div class="card-head">
+                  <h3>Incident load by day</h3>
+                  <span class="hint" id="trendHint">Last 7 days</span>
+                </div>
+                <div class="card-body">
+                  <div class="bar-chart" id="incidentTrendChart"></div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head">
+                  <h3>Mission summary</h3>
+                  <span class="hint">Current register</span>
+                </div>
+                <div class="table-wrap">
+                  <table class="data">
+                    <thead><tr><th>Status</th><th>Count</th><th>Average progress</th><th>Priority mix</th></tr></thead>
+                    <tbody id="reportSummaryRows"><tr><td colspan="4"><div class="empty">Loading summary…</div></td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="stack">
+              <div class="card">
+                <div class="card-head">
+                  <h3>Team status mix</h3>
+                  <span class="hint">Live</span>
+                </div>
+                <div class="card-body">
+                  <div class="donut-wrap">
+                    <div class="donut" id="statusDonut" style="background:conic-gradient(#1d3147 0 100%)">
+                      <div class="donut-center"><b id="donutTotal">0</b><span>teams</span></div>
+                    </div>
+                    <div class="donut-legend" id="statusLegend"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head">
+                  <h3>Export data</h3>
+                  <span class="hint">CSV / JSON</span>
+                </div>
+                <div class="card-body">
+                  <div class="stack" style="gap:8px">
+                    <button class="btn btn-block" id="exportMissionsBtn2">Missions CSV</button>
+                    <button class="btn btn-block" id="exportPersonnelBtn2">Personnel CSV</button>
+                    <button class="btn btn-block" id="exportIncidentsBtn2">Incidents CSV</button>
+                    <button class="btn btn-block" id="exportAuditBtn2">Activity log CSV</button>
+                    <button class="btn btn-block btn-primary" id="exportJsonBtn">Full database JSON</button>
+                  </div>
+                  <div class="field-hint" style="margin-top:10px">Exports are generated locally in the browser from the command database.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== AUDIT ==================== -->
+        <section class="view" id="view-audit">
+          <div class="view-head">
+            <div>
+              <div class="title-row">
+                <h1>Activity Log</h1>
+                <span class="badge badge-purple">Audit trail</span>
+              </div>
+              <div class="sub">
+                <span>Every login, broadcast, status change and data operation</span>
+                <span class="sep">·</span>
+                <span id="auditClock">--:-- PHT</span>
+              </div>
+            </div>
+            <div class="view-actions">
+              <button class="btn" id="exportAuditBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+                Export CSV
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h3>Audit entries</h3>
+              <div class="filters">
+                <input class="input" id="auditSearch" placeholder="Search actor, action or detail">
+                <select class="select" id="auditActionFilter">
+                  <option value="">All actions</option>
+                  <option value="LOGIN">Login</option>
+                  <option value="BROADCAST">Broadcast</option>
+                  <option value="MISSION">Mission</option>
+                  <option value="INCIDENT">Incident</option>
+                  <option value="PERSONNEL">Personnel</option>
+                  <option value="SOS">SOS</option>
+                  <option value="DATA">Data</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="data">
+                <thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Detail</th></tr></thead>
+                <tbody id="auditRows"><tr><td colspan="4"><div class="empty">Loading activity…</div></td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== SETTINGS ==================== -->
+        <section class="view" id="view-settings">
+          <div class="view-head">
+            <div>
+              <div class="title-row">
+                <h1>Settings</h1>
+                <span class="badge badge-purple">Command account</span>
+              </div>
+              <div class="sub">
+                <span>Profile, security and system data</span>
+                <span class="sep">·</span>
+                <span id="settingsClock">--:-- PHT</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <nav class="settings-nav" aria-label="Settings sections">
+              <button class="active" data-settings="profile">Profile</button>
+              <button data-settings="security">Security</button>
+              <button data-settings="system">System</button>
+              <button data-settings="data">Data & backup</button>
+              <button data-settings="about">About</button>
+            </nav>
+
+            <div class="stack">
+              <div class="card" id="settings-profile">
+                <div class="card-head"><h3>Administrator profile</h3><span class="hint">Visible to field teams</span></div>
+                <div class="card-body">
+                  <div class="profile-strip" style="margin-bottom:16px">
+                    <div class="avatar avatar-lg" id="settingsAvatar" style="background:#251d3d;border-color:#45336b;color:var(--purple)">CM</div>
+                    <div class="meta">
+                      <div class="n" id="settingsName">Carl R. Miller</div>
+                      <div class="r" id="settingsRole">Administrator · Duty Commander</div>
+                    </div>
+                    <span class="badge badge-purple" id="settingsResponderId">ADM-0001</span>
+                  </div>
+                  <form id="adminProfileForm">
+                    <div class="form-grid cols-2">
+                      <div class="field"><label for="setName">Full name</label><input class="input" id="setName" required></div>
+                      <div class="field"><label for="setEmail">Email</label><input class="input" id="setEmail" type="email" readonly></div>
+                      <div class="field"><label for="setPhone">Phone</label><input class="input" id="setPhone" placeholder="+63 917 000 0000"></div>
+                      <div class="field"><label for="setTitle">Title</label><input class="input" id="setTitle" placeholder="Administrator · Duty Commander"></div>
+                    </div>
+                    <div class="field"><label for="setOrg">Organization</label><input class="input" id="setOrg" placeholder="Provincial Rescue Coordination Office"></div>
+                    <button class="btn btn-primary" type="submit" style="margin-top:12px">Save profile</button>
+                  </form>
+                </div>
+              </div>
+
+              <div class="card" id="settings-security">
+                <div class="card-head"><h3>Security</h3><span class="hint">Password & sessions</span></div>
+                <div class="card-body">
+                  <form id="adminPasswordForm">
+                    <div class="form-grid cols-3">
+                      <div class="field"><label for="curPass">Current password</label><input class="input" id="curPass" type="password" autocomplete="current-password" required></div>
+                      <div class="field"><label for="newPass">New password</label><input class="input" id="newPass" type="password" autocomplete="new-password" required></div>
+                      <div class="field"><label for="confPass">Confirm new</label><input class="input" id="confPass" type="password" autocomplete="new-password" required></div>
+                    </div>
+                    <button class="btn btn-primary" type="submit" style="margin-top:12px">Change password</button>
+                  </form>
+                  <div class="divider" style="margin:16px 0"></div>
+                  <div class="setting-row">
+                    <div class="s-text"><div class="s-title">Session timeout</div><div class="s-desc">Admin sessions expire after 12 hours of inactivity. Signing in again replaces the previous session.</div></div>
+                    <span class="badge badge-blue">12 h</span>
+                  </div>
+                  <div class="setting-row">
+                    <div class="s-text"><div class="s-title">Role guard</div><div class="s-desc">Responder accounts cannot open the admin portal, and admins are redirected away from the field dashboard.</div></div>
+                    <span class="badge badge-green">Enforced</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card" id="settings-system">
+                <div class="card-head"><h3>System</h3><span class="hint">Demo command preferences</span></div>
+                <div class="card-body">
+                  <div class="setting-row">
+                    <div class="s-text"><div class="s-title">Automatic team simulation</div><div class="s-desc">Moves demo patrols along their sectors so live tracking can be shown without field devices.</div></div>
+                    <label class="switch"><input type="checkbox" id="setSimulation" checked></label>
+                  </div>
+                  <div class="setting-row">
+                    <div class="s-text"><div class="s-title">SOS sound alert</div><div class="s-desc">Play a browser tone when a new SOS arrives. Audio may be blocked until you interact with the page.</div></div>
+                    <label class="switch"><input type="checkbox" id="setSosSound"></label>
+                  </div>
+                  <div class="setting-row">
+                    <div class="s-text"><div class="s-title">Strict check-in windows</div><div class="s-desc">Highlight teams whose check-in window has expired in the alert panel and reports.</div></div>
+                    <label class="switch"><input type="checkbox" id="setStrictCheckin" checked></label>
+                  </div>
+                  <div class="setting-row">
+                    <div class="s-text"><div class="s-title">Show team accuracy radius</div><div class="s-desc">Draw the GPS accuracy circle around the selected team on the command map.</div></div>
+                    <label class="switch"><input type="checkbox" id="setAccuracy" checked></label>
+                  </div>
+                  <button class="btn btn-primary" id="saveSystemBtn" style="margin-top:14px">Save system settings</button>
+                </div>
+              </div>
+
+              <div class="card" id="settings-data">
+                <div class="card-head"><h3>Data & backup</h3><span class="hint">Local command database</span></div>
+                <div class="card-body">
+                  <div class="kv-list">
+                    <div class="kv"><span class="k">Storage engine</span><span class="v" id="settingsDbMode">—</span></div>
+                    <div class="kv"><span class="k">Records</span><span class="v" id="settingsDbRecords">—</span></div>
+                    <div class="kv"><span class="k">Last export</span><span class="v" id="settingsLastExport">Never</span></div>
+                    <div class="kv"><span class="k">Admin access code</span><span class="v mono" id="settingsAdminCode">RESQ-ADMIN-2026</span></div>
+                  </div>
+                  <div class="divider" style="margin:14px 0"></div>
+                  <div class="row wrap" style="gap:8px">
+                    <button class="btn" id="exportJsonBtn2">Download full JSON backup</button>
+                    <button class="btn btn-danger" id="resetDataBtn">Reset demo database</button>
+                  </div>
+                  <div class="field-hint" style="margin-top:10px">Resetting restores the seeded demo accounts, teams, missions, incidents and messages. All local changes are lost.</div>
+                </div>
+              </div>
+
+              <div class="card" id="settings-about">
+                <div class="card-head"><h3>About ResQCoord</h3><span class="hint">Build information</span></div>
+                <div class="card-body">
+                  <div class="kv-list">
+                    <div class="kv"><span class="k">Application</span><span class="v">ResQCoord · Command Center</span></div>
+                    <div class="kv"><span class="k">Version</span><span class="v mono">2.0.0 · demo</span></div>
+                    <div class="kv"><span class="k">Stack</span><span class="v">HTML · CSS · JavaScript · IndexedDB</span></div>
+                    <div class="kv"><span class="k">Map engine</span><span class="v">Leaflet with OpenStreetMap tiles</span></div>
+                    <div class="kv"><span class="k">Routing</span><span class="v">OSRM with offline fallback</span></div>
+                    <div class="kv"><span class="k">Storage mode</span><span class="v" id="aboutDbMode">—</span></div>
+                  </div>
+                  <div class="field-hint" style="margin-top:12px">This is a local-first demonstration build. Data stays in this browser profile; use the JSON backup to move it elsewhere.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="../assets/js/util.js"></script>
+  <script src="../assets/js/db.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/routing.js"></script>
+  <script src="../assets/vendor/leaflet/leaflet.js"></script>
+  <script src="../assets/js/mapkit.js"></script>
+  <script src="../assets/js/tracking.js"></script>
+  <script src="../assets/js/admin-app.js"></script>
+</body>
+</html>

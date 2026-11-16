@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Responder Sign In — ResQCoord</title>
+  <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body class="auth-page" data-portal="user" data-page="login">
+  <section class="auth-brand">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z"/><path d="M12 7v6M9 10h6"/>
+        </svg>
+      </span>
+      <span class="brand-text">
+        <span class="brand-name">ResQ<em>Coord</em></span>
+        <span class="brand-sub">Command Center</span>
+      </span>
+    </a>
+
+    <div class="auth-hero">
+      <div class="eyebrow"><span class="pulse-dot"></span> User portal · Field responder</div>
+      <h1>Every move.<br>Every check-in.<br><span>On the map.</span></h1>
+      <p>
+        Your field dashboard connects you to command, your team and your mission.
+        Share your live position, plan a route, file an incident and call for help
+        from one screen.
+      </p>
+      <div class="auth-stats">
+        <div class="auth-stat">
+          <div class="v">12<em>active</em></div>
+          <div class="l">Team Alpha</div>
+        </div>
+        <div class="auth-stat">
+          <div class="v">70<em>%</em></div>
+          <div class="l">Sector cleared</div>
+        </div>
+        <div class="auth-stat">
+          <div class="v">3.2<em>km</em></div>
+          <div class="l">To ridge marker</div>
+        </div>
+      </div>
+      <div class="auth-features">
+        <div class="auth-feature">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+          Live GPS with a real device fix
+        </div>
+        <div class="auth-feature">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z"/><circle cx="12" cy="10" r="2"/></svg>
+          Route planning and turn-by-turn steps
+        </div>
+        <div class="auth-feature">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg>
+          Secure channel to command
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-footer">
+      <span>ResQCoord 2.4.1</span>
+      <span>Local-first</span>
+      <span>© 2026 PRCO</span>
+    </div>
+  </section>
+
+  <section class="auth-panel">
+    <a class="auth-back" href="../index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+      Back to overview
+    </a>
+
+    <div class="auth-card">
+      <div class="brand">
+        <span class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z"/><path d="M12 7v6M9 10h6"/>
+          </svg>
+        </span>
+        <span class="brand-text">
+          <span class="brand-name">ResQ<em>Coord</em></span>
+          <span class="brand-sub">Command Center</span>
+        </span>
+      </div>
+
+      <div class="portal-switch" role="tablist" aria-label="Portal">
+        <a class="active user" href="login.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Responder
+        </a>
+        <a class="admin" href="../admin/login.html">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
+          Admin
+        </a>
+      </div>
+
+      <div class="auth-kicker">
+        <span class="badge badge-green">User view</span>
+        <span class="tiny muted-2">Field responder access</span>
+      </div>
+      <h2>Sign in to your field dashboard</h2>
+      <p class="lead">Enter your credentials to access your mission, live map and secure channel.</p>
+
+      <div id="sessionNotice" class="demo-box" style="display:none;margin:0 0 16px"></div>
+
+      <form id="authForm" class="auth-form" novalidate autocomplete="on">
+        <div id="formError" class="field-error" style="display:none" role="alert"></div>
+
+        <div class="field">
+          <label for="email">Email address</label>
+          <input class="input" id="email" name="email" type="email" inputmode="email" autocomplete="username" placeholder="you@resqcoord.ph" required>
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="pw-wrap">
+            <input class="input" id="password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+            <button type="button" class="pw-toggle" data-toggle-pw="password" aria-label="Show password">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="row between">
+            <span class="field-hint">12-hour local secure session</span>
+            <a id="forgotLink" href="#" class="small">Forgot password?</a>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-block" id="submitBtn" type="submit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/></svg>
+          Sign in to dashboard
+        </button>
+      </form>
+
+      <p class="auth-alt">Don't have an account? <a href="register.html">Register as a responder</a></p>
+      <p class="auth-alt" style="margin-top:8px">Command staff? <a href="../admin/login.html">Open the admin portal</a></p>
+
+      <div class="demo-box">
+        <div class="demo-title">
+          <span>Demo responder account</span>
+          <button type="button" class="btn btn-sm" data-fill="user" style="height:24px;font-size:10px">Fill in</button>
+        </div>
+        <div class="demo-creds">
+          <span>Email&nbsp;&nbsp;&nbsp; <b>j.reyes@resqcoord.ph</b></span>
+          <span>Password <b>User@123</b></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script src="../assets/js/util.js"></script>
+  <script src="../assets/js/db.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/auth-page.js"></script>
+</body>
+</html>

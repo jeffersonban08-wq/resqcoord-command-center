@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build output
+release/
+dist/
+out/
+
+# Installers and archives (use GitHub Releases)
+*.exe
+*.msi
+*.zip
+*.7z
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local environment
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/

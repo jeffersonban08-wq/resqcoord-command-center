@@ -1,0 +1,46 @@
+{
+  "name": "resqcoord",
+  "productName": "ResQCoord",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Rescue coordination command center",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis portable"
+  },
+  "build": {
+    "appId": "ph.resqcoord.desktop",
+    "productName": "ResQCoord",
+    "asar": false,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "index.html",
+      "admin/**/*",
+      "user/**/*",
+      "assets/**/*",
+      "server.js",
+      "electron/**/*",
+      "package.json",
+      "DESKTOP.md"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "devDependencies": {
+    "electron": "^45.3.3",
+    "electron-builder": "^26.18.0"
+  }
+}

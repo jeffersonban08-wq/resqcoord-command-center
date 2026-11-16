@@ -1,0 +1,52 @@
+ResQCoord — Desktop / Hybrid Build
+==================================
+
+This repository contains both the browser app and the Electron desktop wrapper.
+
+DOWNLOAD THE READY-TO-RUN APP
+-----------------------------
+Use the repository's Releases page:
+  ResQCoord 1.0.0.exe        portable app (no install)
+  ResQCoord Setup 1.0.0.exe  installer with shortcuts
+
+FASTEST WAY TO RUN FROM SOURCE
+------------------------------
+1. Install Node.js LTS from https://nodejs.org if it is not installed.
+2. Double-click: start-desktop.bat
+3. The first run downloads Electron, then opens the desktop window.
+
+MANUAL WAY
+----------
+Open a terminal in this folder and run:
+
+    npm install
+    npm start
+
+BUILD A WINDOWS INSTALLER
+-------------------------
+    npm run dist
+
+The installer and portable app appear in:
+
+    release\
+
+FILES THAT MATTER
+-----------------
+    electron/main.js      Electron desktop entry
+    server.js             local static server (starts on 127.0.0.1:31777)
+    package.json          Electron + electron-builder configuration
+    DESKTOP.md            full desktop notes
+
+DEMO ACCOUNTS
+-------------
+Admin:      admin@resqcoord.ph / Admin@123
+Responder:  j.reyes@resqcoord.ph / User@123
+Responder:  m.santos@resqcoord.ph / User@123
+
+IMPORTANT
+---------
+- Keep port 31777 unchanged. The local database is tied to that origin.
+- Desktop data is stored in %APPDATA%\resqcoord.
+- Allow Windows location access for real GPS.
+- The desktop app stores data locally. Multiple PCs do not share data
+  without a separate backend server.

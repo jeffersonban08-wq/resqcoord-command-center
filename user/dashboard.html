@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Field Dashboard — ResQCoord</title>
+  <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="../assets/css/app.css">
+  <style>
+    .leaflet-tile-pane { filter: brightness(0.7) saturate(0.72) contrast(1.12); }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <aside class="sidebar" aria-label="Responder navigation">
+      <div class="sidebar-head">
+        <a class="brand" href="../index.html">
+          <span class="brand-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11Z"/><path d="M12 7v6M9 10h6"/>
+            </svg>
+          </span>
+          <span class="brand-text">
+            <span class="brand-name">ResQ<em>Coord</em></span>
+            <span class="brand-sub">Command Center</span>
+          </span>
+        </a>
+        <div class="sidebar-scope"><span class="dot"></span> User view · Field responder</div>
+      </div>
+
+      <nav class="side-nav" aria-label="Dashboard sections">
+        <div class="nav-label">Operations</div>
+        <button class="nav-item active" data-view="dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Dashboard
+        </button>
+        <button class="nav-item" data-view="mission">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          My Mission
+        </button>
+        <button class="nav-item" data-view="map">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+          Live Map
+        </button>
+        <button class="nav-item" data-view="messages">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg>
+          Messages
+          <span class="count" id="msgUnread" style="display:none">0</span>
+        </button>
+        <button class="nav-item" data-view="incident">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Report Incident
+        </button>
+        <div class="nav-label">Account</div>
+        <button class="nav-item" data-view="settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+          Settings
+        </button>
+
+        <div class="nav-label">Quick actions</div>
+        <button class="nav-item" data-action="checkin">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="m9 11 3 3L22 4"/></svg>
+          Check in
+        </button>
+        <button class="nav-item" data-action="sos" style="color:var(--danger)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 9.5h4.5M8 14.5h4.5M15 9.5v5"/></svg>
+          SOS Alert
+        </button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="side-user" id="sideUser" role="button" tabindex="0">
+          <div class="avatar green" id="sidebarAvatar">JR</div>
+          <div class="meta">
+            <div class="name" id="sidebarName">J. Reyes</div>
+            <div class="role" id="sidebarRole">Field Responder · Team Alpha</div>
+          </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main-wrap">
+      <div class="offline-banner" id="offlineBanner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        You are offline. The map tiles and road routing need a connection — cached data and your local database still work.
+      </div>
+
+      <header class="topbar">
+        <button class="btn-icon mobile-toggle" id="sidebarToggle" aria-label="Open navigation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div class="crumb">
+          <span>Responder</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          <b id="crumb">Dashboard</b>
+          <span class="badge badge-green" style="height:20px;font-size:9px">USER</span>
+        </div>
+        <div class="topbar-spacer"></div>
+        <div class="topbar-status">
+          <span class="sync-mini" title="Last database sync">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.3"/><path d="M21 3v6h-6"/></svg>
+            <span id="lastSync">Synced just now</span>
+          </span>
+          <span class="net-status" id="netStatus"><span class="dot"></span> Online</span>
+          <div class="topbar-user">
+            <div class="meta">
+              <div class="name" id="topName">J. Reyes</div>
+              <div class="role" id="topRole">Field Responder</div>
+            </div>
+            <div class="avatar green" id="topAvatar">JR</div>
+            <button class="btn-icon" data-action="logout" title="Sign out" aria-label="Sign out">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="main">
+        <!-- ============ DASHBOARD ============ -->
+        <section class="view active" id="view-dashboard">
+          <div class="view-head">
+            <div>
+              <div class="title-row">
+                <h1>My Dashboard</h1>
+                <span class="badge badge-green">Field team view</span>
+              </div>
+              <div class="sub">
+                <span id="dashSub">Team Alpha</span>
+                <span class="sep">·</span>
+                <span id="clock">--:-- PHT</span>
+                <span class="sep">·</span>
+                <span class="row" style="gap:5px"><span class="pulse-dot"></span> Live sync</span>
+              </div>
+            </div>
+            <div class="view-actions">
+              <button class="btn" data-action="status">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/></svg>
+                Update status
+              </button>
+              <button class="btn btn-primary" data-action="checkin">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="m9 11 3 3L22 4"/></svg>
+                Check in
+              </button>
+            </div>
+          </div>
+
+          <div class="kpis">
+            <div class="kpi">
+              <div class="kpi-top">
+                <span class="kpi-label">Deployed team</span>
+                <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>
+              </div>
+              <div class="kpi-value"><span id="kpiTeam">12</span><small>personnel</small></div>
+              <div class="kpi-foot"><span class="up" id="kpiTeamName">Team Alpha</span> · on site</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-top">
+                <span class="kpi-label">Mission progress</span>
+                <span class="kpi-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="m9 11 3 3L22 4"/></svg></span>
+              </div>
+              <div class="kpi-value"><span id="kpiProgress">70</span><small>%</small></div>
+              <div class="kpi-foot"><span class="up" id="kpiSector">N-2</span> · 7 of 10 grid cells</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-top">
+                <span class="kpi-label">Next check-in</span>
+                <span class="kpi-icon amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+              </div>
+              <div class="kpi-value"><span id="kpiCheckin">--:--</span></div>
+              <div class="kpi-foot"><span class="warn" id="kpiCheckinIn">--</span> remaining in window</div>
+            </div>
+            <div class="kpi">
+              <div class="kpi-top">
+                <span class="kpi-label">My status</span>
+                <span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span>
+              </div>
+              <div class="kpi-value" id="kpiStatus" style="font-size:22px">On site</div>
+              <div class="kpi-foot"><span class="up">GPS locked</span> · <span id="kpiAccuracy">8 m</span></div>
+            </div>
+          </div>
+
+          <div class="dash-grid">
+            <div class="stack">
+              <div class="status-hero">
+                <div class="row between wrap">
+                  <div>
+                    <div class="sh-label">My status</div>
+                    <div class="sh-value">
+                      <span class="dot-big"></span>
+                      <span id="statusValue">On site</span>
+                    </div>
+                  </div>
+                  <select class="status-select" id="statusSelect" aria-label="Update my status">
+                    <option value="onsite">On site</option>
+                    <option value="enroute">En route</option>
+                    <option value="standby">Standby</option>
+                  </select>
+                </div>
+                <div class="sh-meta">
+                  <div class="item">
+                    <div class="k">Next check-in</div>
+                    <div class="v" id="nextCheckin">14:45 · 13 min</div>
+                  </div>
+                  <div class="item">
+                    <div class="k">Team</div>
+                    <div class="v" id="heroTeam">Team Alpha · 12</div>
+                  </div>
+                  <div class="item">
+                    <div class="k">Assigned mission</div>
+                    <div class="v" id="heroMission">Mt. Lantin Rescue</div>
+                  </div>
+                  <div class="item">
+                    <div class="k">Last check-in</div>
+                    <div class="v" id="heroLastCheckin">--</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card map-card">
+                <div class="card-head">
+                  <h3>
+                    My location
+                    <span class="badge badge-blue" style="height:20px;font-size:9px">Own sector only</span>
+                    <span class="gps-badge" id="miniGpsBadge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg> Locked</span>
+                  </h3>
+                  <button class="btn btn-sm btn-ghost" data-view-link="map">Open full map</button>
+                </div>
+                <div class="map-shell short" style="height:300px">
+                  <div class="map" id="userMiniMap"></div>
+                  <div class="map-overlay-foot">
+                    <span class="map-coords" id="miniCoords">16.40680, 120.60120 · <b>±8 m</b></span>
+                    <span class="map-pill"><span class="live-dot green"></span> Tracking</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-2">
+                <div class="card">
+                  <div class="card-head">
+                    <h3><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--muted)"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg> Messages from command</h3>
+                    <button class="btn btn-sm btn-ghost" data-view-link="messages">View all</button>
+                  </div>
+                  <div id="dashMessages" class="side-list"><div class="empty">Loading messages…</div></div>
+                </div>
+
+                <div class="card">
+                  <div class="card-head">
+                    <h3>My team</h3>
+                    <span class="hint" id="dashTeamMeta">Team Alpha</span>
+                  </div>
+                  <div id="dashTeam" class="side-list"><div class="empty">Loading team…</div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stack">
+              <div class="card">
+                <div class="card-head">
+                  <h3>Quick actions</h3>
+                  <span class="hint">Field tools</span>
+                </div>
+                <div class="card-body">
+                  <div class="quick-grid">
+                    <button class="quick-btn" data-action="checkin">
+                      <span class="qi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="m9 11 3 3L22 4"/></svg></span>
+                      <span><b>Check in</b><small>Send position</small></span>
+                    </button>
+                    <button class="quick-btn" data-action="status">
+                      <span class="qi blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span>
+                      <span><b>Update status</b><small>On site / en route</small></span>
+                    </button>
+                    <button class="quick-btn" data-action="report">
+                      <span class="qi amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+                      <span><b>Report incident</b><small>File from field</small></span>
+                    </button>
+                    <button class="quick-btn" data-action="sos">
+                      <span class="qi red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 9.5h4.5M8 14.5h4.5M15 9.5v5"/></svg></span>
+                      <span><b>SOS alert</b><small>Emergency</small></span>
+                    </button>
+                    <button class="quick-btn" data-view-link="map">
+                      <span class="qi purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg></span>
+                      <span><b>Plan route</b><small>Map + navigation</small></span>
+                    </button>
+                    <button class="quick-btn" data-action="message">
+                      <span class="qi blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg></span>
+                      <span><b>Message command</b><small>Secure channel</small></span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head">
+                  <h3>Assigned mission</h3>
+                  <span class="badge badge-amber" id="dashMissionStatus">In progress</span>
+                </div>
+                <div class="card-body">
+                  <div class="mission-id" id="dashMissionCode">MSN-2026-014</div>
+                  <h2 style="margin-top:10px;font-size:18px" id="dashMissionTitle">Mt. Lantin Rescue</h2>
+                  <div class="small muted-2" style="margin-top:5px" id="dashMissionSector">Sector N-2 · Mountain SAR</div>
+                  <div class="row between small" style="margin-top:16px">
+                    <span class="muted-2">Sector progress</span>
+                    <b id="dashMissionPct">70%</b>
+                  </div>
+                  <div class="big-progress" style="margin-top:7px"><i id="dashMissionBar" style="width:70%"></i></div>
+                  <div class="kv-list" style="margin-top:14px">
+                    <div class="kv"><span class="k">Mission lead</span><span class="v" id="dashMissionLead">Lt. Mara Santos</span></div>
+                    <div class="kv"><span class="k">Checkpoints</span><span class="v" id="dashMissionCp">3 of 5 reached</span></div>
+                    <div class="kv"><span class="k">Next waypoint</span><span class="v" id="dashMissionNext">Ridge marker</span></div>
+                  </div>
+                  <button class="btn btn-block" style="margin-top:14px" data-view-link="mission">Open mission brief</button>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head">
+                  <h3>Check-in window</h3>
+                  <span class="badge badge-amber">Due soon</span>
+                </div>
+                <div class="card-body">
+                  <div class="row between">
+                    <div>
+                      <div class="tiny uppercase muted-2">Scheduled</div>
+                      <div style="font-size:20px;font-weight:700;letter-spacing:-.5px" id="checkinDue">14:45 PHT</div>
+                    </div>
+                    <div class="avatar green" style="width:44px;height:44px">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                    </div>
+                  </div>
+                  <div class="field-hint" style="margin-top:10px">Check in every 15 minutes during active missions. Command is notified automatically if you miss a window.</div>
+                  <button class="btn btn-primary btn-block" style="margin-top:13px" data-action="checkin">Check in now</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ MISSION ============ -->
+        <section class="view" id="view-mission">
+          <div class="view-head">
+            <div>
+              <div class="title-row">
+                <h1>My Mission</h1>
+                <span class="badge badge-amber" id="missionBadge">In progress</span>
+              </div>
+              <div class="sub">
+                <span id="missionSub">Assigned mission · Mt. Lantin Rescue</span>
+                <span class="sep">·</span>
+                <span id="missionClock">--:-- PHT</span>
+              </div>
+            </div>
+            <div class="view-actions">
+              <button class="btn" data-action="backup">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+                Request backup
+              </button>
+              <button class="btn btn-primary" data-view-link="map">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+                Open map
+              </button>
+            </div>
+          </div>
+
+          <div class="mission-hero">
+            <div class="row between wrap" style="align-items:flex-start">
+              <div>
+                <span class="mission-id" id="missionCode">MSN-2026-014</span>
+                <h2 style="font-size:25px;letter-spacing:-.8px;margin-top:11px" id="missionTitle">Mt. Lantin Rescue</h2>
+                <div class="small muted" style="margin-top:6px" id="missionType">Priority: High · Mountain SAR · Sector N-2</div>
+              </div>
+              <div style="text-align:right;min-width:190px">
+                <div class="tiny uppercase muted-2">Elapsed time</div>
+                <div style="font-size:28px;font-weight:720;letter-spacing:-1px" id="missionElapsed">3h 12m</div>
+                <div class="tiny muted-2" id="missionDispatched">Dispatched 11:20 PHT</div>
+              </div>
+            </div>
+            <div class="row between" style="margin-top:20px">
+              <span class="tiny uppercase muted-2">Sector progress · <b id="missionSector">N-2</b></span>
+              <b id="missionPct">70%</b>
+            </div>
+            <div class="big-progress" style="margin-top:8px"><i id="missionBar" style="width:70%"></i></div>
+            <div class="row between tiny muted-2" style="margin-top:7px">
+              <span id="missionCells">7 of 10 grid cells cleared</span>
+              <span>Updated just now</span>
+            </div>
+          </div>
+
+          <div class="grid grid-2" style="margin-top:16px">
+            <div class="card">
+              <div class="card-head">
+                <h3>Mission briefing</h3>
+                <span class="badge badge-red">Priority: High</span>
+              </div>
+              <div class="card-body">
+                <div class="brief-grid">
+                  <div class="brief-item"><div class="k">Subjects</div><div class="v" id="briefSubjects">2 lost hikers</div></div>
+                  <div class="brief-item"><div class="k">Last seen</div><div class="v" id="briefLastSeen">North spur trailhead</div></div>
+                  <div class="brief-item"><div class="k">Weather</div><div class="v" id="briefWeather">Light rain</div></div>
+                  <div class="brief-item"><div class="k">Hazards</div><div class="v" id="briefHazards">Rockfall in Sector C</div></div>
+                  <div class="brief-item"><div class="k">Mission lead</div><div class="v" id="briefLead">Lt. Mara Santos</div></div>
+                  <div class="brief-item"><div class="k">Assigned team</div><div class="v" id="briefTeam">Team Alpha</div></div>
+                </div>
+                <div class="divider" style="margin:16px 0"></div>
+                <p class="small" style="color:var(--muted);line-height:1.7" id="briefDescription">Mission description.</p>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <h3>Mission timeline</h3>
+                <span class="badge badge-green">Live</span>
+              </div>
+              <div class="card-body">
+                <div class="timeline" id="missionTimeline"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="page-grid" style="margin-top:16px">
+            <div class="card">
+              <div class="card-head">
+                <h3>Checkpoints</h3>
+                <span class="hint" id="cpSummary">3 of 5 reached</span>
+              </div>
+              <div class="card-body" id="missionCheckpoints"></div>
+            </div>
+
+            <div class="stack">
+              <div class="card">
+                <div class="card-head">
+                  <h3>Sector progress</h3>
+                  <span class="badge badge-blue">N-2</span>
+                </div>
+                <div class="card-body">
+                  <div class="sector-grid" id="sectorGrid"></div>
+                  <div class="row between tiny muted-2" style="margin-top:10px">
+                    <span><i style="display:inline-block;width:6px;height:6px;border-radius:2px;background:var(--accent);margin-right:4px"></i> Cleared</span>
+                    <span><i style="display:inline-block;width:6px;height:6px;border-radius:2px;background:var(--accent-2);margin-right:4px"></i> Current</span>
+                    <span><i style="display:inline-block;width:6px;height:6px;border-radius:2px;background:#21384f;margin-right:4px"></i> Pending</span>
+                  </div>
+                  <div class="divider" style="margin:14px 0"></div>
+                  <div class="kv-list">
+                    <div class="kv"><span class="k">Grid cells cleared</span><span class="v">7 / 10</span></div>
+                    <div class="kv"><span class="k">Area covered</span><span class="v">1.8 km²</span></div>
+                    <div class="kv"><span class="k">Team on task</span><span class="v">12 responders</span></div>
+                    <div class="kv"><span class="k">Drone support</span><span class="v">Air Unit 2 · standby</span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-head"><h3>Need help?</h3></div>
+                <div class="card-body">
+                  <p class="small muted" style="line-height:1.6">Request additional personnel or a medic for your sector. Command will acknowledge on the secure channel.</p>
+                  <button class="btn btn-block" style="margin-top:12px" data-action="backup">Request backup</button>
+                  <button class="btn btn-danger btn-block" style="margin-top:8px" data-action="sos">Activate SOS</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ LIVE MAP ============ -->
+        <section class="view" id="view-map">
+          <div class="view-head">
+            <div>
+              <div class="title-row">
+                <h1>Live Map</h1>
+                <span class="badge badge-green">Tracking</span>
+              </div>
+              <div class="sub">
+                <span>Mt. Lantin operational area</span>
+                <span class="sep">·</span>
+                <span id="mapClock">--:-- PHT</span>
+                <span class="sep">·</span>
+                <span class="gps-badge" id="mapGpsBadge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg> GPS locked</span>
+              </div>
+            </div>
+            <div class="view-actions">
+              <button class="btn" id="gpsBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+                <span id="gpsBtnLabel">Use my GPS</span>
+              </button>
+              <button class="btn" id="demoBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                <span id="demoBtnLabel">Demo movement</span>
+              </button>
+              <button class="btn btn-primary" data-action="checkin">Check in here</button>
+            </div>
+          </div>
+
+          <div class="card map-card">
+            <div class="map-shell tall">
+              <div class="map" id="userMap"></div>
+              <div class="map-overlay-head">
+                <span class="map-pill"><span class="live-dot"></span> Live · auto-refresh 2.6 s</span>
+                <div class="map-tools">
+                  <button class="map-tool active" data-layer="streets">Streets</button>
+                  <button class="map-tool" data-layer="satellite">Satellite</button>
+                  <button class="map-tool" data-layer="terrain">Terrain</button>
+                  <button class="map-tool active" id="sectorsToggle">Sectors</button>
+                  <button class="map-tool active" id="routeToggle">Route</button>
+                  <button class="map-tool" id="centerBtn">Center me</button>
+                </div>
+              </div>
+              <div class="map-overlay-foot">
+                <span class="map-coords" id="mapCoords">16.40680, 120.60120 · <b>±8 m</b></span>
+                <span class="map-legend">
+                  <span><i class="lg-onsite"></i> On site</span>
+                  <span><i class="lg-enroute"></i> En route</span>
+                  <span><i class="lg-standby"></i> Standby</span>
+                  <span><i class="lg-sos"></i> SOS</span>
+                </span>
+              </div>
+
+              <div class="map-route-panel" id="routePanel">
+                <div class="rp-head">
+                  <span>Route planner</span>
+                  <button class="btn-icon" id="routeClose" style="width:24px;height:24px" aria-label="Close route panel">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  </button>
+                </div>
+                <div class="rp-body">
+                  <div class="field">
+                    <label for="routeFrom">Start</label>
+                    <select class="select" id="routeFrom" style="height:36px;font-size:12px">
+                      <option value="me">My current location</option>
+                      <option value="base">Base Camp</option>
+                      <option value="trailhead">Trailhead</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="routeTo">Destination</label>
+                    <select class="select" id="routeTo" style="height:36px;font-size:12px"></select>
+                  </div>
+                  <div class="field">
+                    <label for="routeSearch">Search a place</label>
+                    <div class="input-group">
+                      <input class="input" id="routeSearch" style="height:36px;font-size:12px" placeholder="e.g. Baguio, ridge marker">
+                      <button class="btn btn-sm" id="routeSearchBtn" style="height:36px">Find</button>
+                    </div>
+                  </div>
+                  <label class="check" style="font-size:11px;color:var(--muted-2)">
+                    <input type="checkbox" id="routeDirect"> Off-road direct route
+                  </label>
+                  <button class="btn btn-primary btn-block btn-sm" id="routeBtn" style="height:36px">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>
+                    Get route
+                  </button>
+                </div>
+                <div class="rp-result" id="routeResult" style="display:none"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-3" style="margin-top:16px">
+            <div class="card">
+              <div class="card-head">
+                <h3>GPS & location</h3>
+                <span class="gps-badge" id="gpsBadge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg> Locked</span>
+              </div>
+              <div class="card-body">
+                <div class="kv-list">
+                  <div class="kv"><span class="k">Latitude</span><span class="v mono" id="gpsLat">16.40680</span></div>
+                  <div class="kv"><span class="k">Longitude</span><span class="v mono" id="gpsLng">120.60120</span></div>
+                  <div class="kv"><span class="k">Accuracy</span><span class="v" id="gpsAccuracy">±8 m</span></div>
+                  <div class="kv"><span class="k">Speed</span><span class="v" id="gpsSpeed">3.2 km/h</span></div>
+                  <div class="kv"><span class="k">Source</span><span class="v" id="gpsSource">Demo tracker</span></div>
+                  <div class="kv"><span class="k">Updated</span><span class="v" id="gpsUpdated">just now</span></div>
+                </div>
+                <div class="divider" style="margin:13px 0"></div>
+                <div class="form-grid cols-2">
+                  <div class="field">
+                    <label for="latInput">Set latitude</label>
+                    <input class="input" id="latInput" inputmode="decimal" style="height:35px;font-size:12px" placeholder="16.4068">
+                  </div>
+                  <div class="field">
+                    <label for="lngInput">Set longitude</label>
+                    <input class="input" id="lngInput" inputmode="decimal" style="height:35px;font-size:12px" placeholder="120.6012">
+                  </div>
+                </div>
+                <div class="row" style="margin-top:9px;gap:6px;flex-wrap:wrap">
+                  <button class="btn btn-sm" id="applyLocation">Change location</button>
+                  <button class="btn btn-sm btn-ghost" id="pickMapBtn">Pick on map</button>
+                  <button class="btn btn-sm btn-ghost" id="gpsFixBtn">Use GPS fix</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <h3>Movement trail</h3>
+                <span class="hint">Last positions</span>
+              </div>
+              <div class="card-body">
+                <div class="kv-list">
+                  <div class="kv"><span class="k">Points recorded</span><span class="v" id="trailCount">—</span></div>
+                  <div class="kv"><span class="k">Distance tracked</span><span class="v" id="trailDistance">—</span></div>
+                  <div class="kv"><span class="k">Tracking mode</span><span class="v" id="trackingMode">Demo simulation</span></div>
+                  <div class="kv"><span class="k">Live updates</span><span class="v" id="liveUpdates">Local channel</span></div>
+                </div>
+                <div class="divider" style="margin:13px 0"></div>
+                <label class="switch" style="font-size:12px">
+                  <input type="checkbox" id="simToggle" checked>
+                  Follow live team movement
+                </label>
+                <div class="field-hint" style="margin-top:8px">The demo tracker moves your marker along the patrol route every 2.2 seconds and stores each point in the database.</div>
+                <button class="btn btn-sm btn-block" style="margin-top:11px" id="recenterTrail">Show my trail</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <h3>Nearby waypoints</h3>
+                <span class="hint">Tap to route</span>
+              </div>
+              <div id="nearbyPlaces" class="side-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ MESSAGES ============ -->
+        <section class="view" id="view-messages">
+          <div class="view-head">
+            <div>
+              <div class="title-row">
+                <h1>Messages</h1>
+                <span class="badge badge-green">Secure channel</span>
+              </div>
+              <div class="sub">
+                <span>Command and team communications</span>
+                <span class="sep">·</span>
+                <span id="msgClock">--:-- PHT</span>
+              </div>
+            </div>
+            <div class="view-actions">
+              <div class="row" style="gap:7px">
+                <span class="badge badge-red">Check-in due</span>
+                <button class="btn btn-sm btn-primary" data-action="checkin">Check in now</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="msg-layout">
+              <div class="msg-side">
+                <div class="msg-side-head">
+                  <div class="label" style="margin-bottom:8px">Channels</div>
+                  <div class="input-group">
+                    <input class="input" id="threadSearch" placeholder="Search messages" style="height:33px;font-size:11.5px">
+                    <button class="btn btn-sm" id="threadSearchBtn" style="height:33px">Go</button>
+                  </div>
+                </div>
+                <div id="threadList"></div>
+              </div>
+              <div class="chat">
+                <div class="chat-head">
+                  <div class="avatar green" id="chatAvatar">C</div>
+                  <div class="meta">
+                    <div class="name" id="chatTitle">Command Center</div>
+                    <div class="sub" id="chatSub">Broadcast channel · all teams</div>
+                  </div>
+                  <span class="badge badge-green">Online</span>
+                </div>
+                <div class="chat-body" id="chatBody"></div>
+                <form class="chat-compose" id="chatForm">
+                  <textarea id="chatInput" placeholder="Message Command Center…" aria-label="Message"></textarea>
+                  <button class="btn btn-primary" type="submit" aria-label="Send message">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                    Send
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ REPORT INCIDENT ============ -->
+        <section class="view" id="view-incident">
+          <div class="view-head">
+            <div>
+              <div class="title-row">
+                <h1>Report Incident</h1>
+                <span class="badge badge-amber">Draft</span>
+              </div>
+              <div class="sub">
+                <span>File an incident from the field</span>
+                <span class="sep">·</span>
+                <span id="incidentClock">--:-- PHT</span>
+              </div>
+            </div>
+            <div class="view-actions">
+              <button class="btn" id="incidentSos" style="color:var(--danger)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 9.5h4.5M8 14.5h4.5M15 9.5v5"/></svg>
+                SOS instead
+              </button>
+            </div>
+          </div>
+
+          <div class="page-grid">
+            <div class="card">
+              <div class="card-head">
+                <h3>New incident report</h3>
+                <span class="gps-badge" id="incidentGpsBadge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg> GPS locked</span>
+              </div>
+              <form class="card-body" id="incidentForm">
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="incType">Incident type</label>
+                    <select class="select" id="incType">
+                      <option>Injured person</option>
+                      <option>Hazard</option>
+                      <option>Missing person</option>
+                      <option>Equipment</option>
+                      <option>Weather</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
+
+                  <div class="field">
+                    <label>Severity</label>
+                    <div class="sev-picker" id="sevPicker">
+                      <button type="button" class="sev-opt" data-sev="Low"><i></i> Low</button>
+                      <button type="button" class="sev-opt" data-sev="Medium"><i></i> Medium</button>
+                      <button type="button" class="sev-opt active" data-sev="High"><i></i> High</button>
+                      <button type="button" class="sev-opt" data-sev="Critical"><i></i> Critical</button>
+                    </div>
+                    <input type="hidden" id="incSeverity" value="High">
+                  </div>
+
+                  <div class="field">
+                    <label for="incLoc">Location</label>
+                    <div class="input-group">
+                      <input class="input" id="incLoc" placeholder="Capturing GPS…" readonly>
+                      <button type="button" class="btn btn-sm" id="incLocRefresh">Refresh GPS</button>
+                    </div>
+                    <span class="field-hint">Coordinates are attached automatically from your live position.</span>
+                  </div>
+
+                  <div class="field">
+                    <label for="incDesc">Description</label>
+                    <textarea class="textarea" id="incDesc" placeholder="Describe what you see, hazards, injuries, and recommended action…" rows="5"></textarea>
+                    <span class="field-hint" id="incDescCount">0 / 500 characters</span>
+                  </div>
+
+                  <div class="field">
+                    <label>Attachments <span class="label-optional">(optional)</span></label>
+                    <div class="row" style="gap:8px;flex-wrap:wrap">
+                      <span class="chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg> IMG_0412</span>
+                      <span class="chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg> IMG_0413</span>
+                      <button type="button" class="chip" id="addPhoto">+ Add photo</button>
+                    </div>
+                    <span class="field-hint">File uploads are stubbed in this local build; photo references are saved with the report.</span>
+                  </div>
+                </div>
+
+                <div class="row wrap" style="margin-top:18px;gap:8px">
+                  <button class="btn btn-primary" type="submit" id="submitIncident">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                    Submit report
+                  </button>
+                  <button class="btn" type="button" id="saveDraft">Save draft</button>
+                  <button class="btn btn-ghost" type="reset">Cancel</button>
+                </div>
+              </form>
+            </div>
+
+            <div class="stack">
+              <div class="card">
+                <div class="card-head"><h3>Auto-attached</h3></div>
+                <div class="card-body" style="padding-top:8px">
+                  <div class="kv-list">
+                    <div class="kv"><span class="k">Reporter</span><span class="v" id="autoReporter">J. Reyes · Field Responder</span></div>
+                    <div class="kv"><span class="k">Team</span><span class="v" id="autoTeam">Team Alpha</span></div>
+                    <div class="kv"><span class="k">Mission</span><span class="v" id="autoMission">MSN-2026-014</span></div>
+                    <div class="kv"><span class="k">Time</span><span class="v" id="autoTime">--:-- PHT</span></div>
+                    <div class="kv"><span class="k">Network</span><span class="v">Online · secure channel</span></div>
+                    <div class="kv"><span class="k">GPS accuracy</span><span class="v" id="autoAccuracy">±8 m</span></div>
+                  </div>
+                  <div class="divider" style="margin:14px 0"></div>
+                  <div class="tiny uppercase muted-2" style="margin-bottom:7px">What happens next</div>
+                  <p class="small muted" style="line-height:1.6;margin:0">
+                    High severity notifies the duty commander immediately. Critical severity also raises an SOS alert for the nearest team.
+                  </p>
+                  <div class="row" style="margin-top:11px;gap:6px;flex-wrap:wrap">
+                    <span class="badge badge-purple">High → notify</span>
+                    <span class="badge badge-red">Critical → SOS</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-head">
+                  <h3>Recent reports</h3>
+                  <span class="hint">Team Alpha</span>
+                </div>
+                <div id="recentReports" class="side-list"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ SETTINGS ============ -->
+        <section class="view" id="view-settings">
+          <div class="view-head">
+            <div>
+              <div class="title-row">
+                <h1>Settings</h1>
+                <span class="badge badge-muted">Account</span>
+              </div>
+              <div class="sub">
+                <span>Profile, alerts, location and privacy</span>
+                <span class="sep">·</span>
+                <span id="settingsClock">--:-- PHT</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <div class="settings-nav" id="settingsNav">
+              <button class="active" data-settings="profile">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Profile
+              </button>
+              <button data-settings="notifications">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+                Notifications
+              </button>
+              <button data-settings="privacy">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                Location &amp; privacy
+              </button>
+              <button data-settings="security">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Security
+              </button>
+            </div>
+
+            <div>
+              <div class="card settings-section" data-section="profile">
+                <div class="card-head">
+                  <h3>Profile</h3>
+                  <span class="hint">Visible to command and your team</span>
+                </div>
+                <div class="card-body">
+                  <div class="profile-strip">
+                    <div class="avatar avatar-lg green" id="settingsAvatar">JR</div>
+                    <div class="meta">
+                      <div class="n" id="settingsName">J. Reyes</div>
+                      <div class="r" id="settingsRole">Field Responder · Team Alpha</div>
+                      <div class="row" style="margin-top:7px;gap:6px">
+                        <span class="badge badge-green">Active</span>
+                        <span class="badge badge-muted no-dot" id="settingsResponderId">FR-0214</span>
+                      </div>
+                    </div>
+                  </div>
+                  <form id="profileForm" class="form-grid cols-2">
+                    <div class="field"><label for="profName">Full name</label><input class="input" id="profName" name="name"></div>
+                    <div class="field"><label for="profPhone">Contact number</label><input class="input" id="profPhone" name="phone"></div>
+                    <div class="field"><label for="profEmail">Email</label><input class="input" id="profEmail" readonly></div>
+                    <div class="field"><label for="profTeam">Team</label><input class="input" id="profTeam" readonly></div>
+                    <div class="field"><label for="profOrg">Organization</label><input class="input" id="profOrg" name="org"></div>
+                    <div class="field"><label for="profCert">Certification</label><input class="input" id="profCert" name="cert" placeholder="e.g. Wilderness First Responder"></div>
+                    <div class="field" style="grid-column:1/-1"><label for="profTitle">Role title</label><input class="input" id="profTitle" name="title"></div>
+                    <div style="grid-column:1/-1"><button class="btn btn-primary" type="submit">Save profile</button></div>
+                  </form>
+                </div>
+              </div>
+
+              <div class="card settings-section" data-section="notifications" style="display:none">
+                <div class="card-head"><h3>Notifications</h3><span class="hint">Alert behaviour</span></div>
+                <div class="card-body" style="padding-top:4px">
+                  <div class="setting-row">
+                    <div class="s-text"><div class="s-title">SOS &amp; critical alerts</div><div class="s-desc">Always on · overrides silent mode</div></div>
+                    <label class="switch"><input type="checkbox" checked disabled></label>
+                  </div>
+                  <div class="setting-row">
+                    <div class="s-text"><div class="s-title">Check-in reminders</div><div class="s-desc">Remind me 5 minutes before each check-in window</div></div>
+                    <label class="switch"><input type="checkbox" class="notif-toggle" data-notif="checkin" checked></label>
+                  </div>
+                  <div class="setting-row">
+                    <div class="s-text"><div class="s-title">Messages from command</div><div class="s-desc">Sound and vibration for secure channel messages</div></div>
+                    <label class="switch"><input type="checkbox" class="notif-toggle" data-notif="messages" checked></label>
+                  </div>
+                  <div class="setting-row">
+                    <div class="s-text"><div class="s-title">Weather warnings</div><div class="s-desc">Rain, wind and lightning alerts for your sector</div></div>
+                    <label class="switch"><input type="checkbox" class="notif-toggle" data-notif="weather" checked></label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card settings-section" data-section="privacy" style="display:none">
+                <div class="card-head"><h3>Location &amp; privacy</h3><span class="hint">Who can see you</span></div>
+                <div class="card-body" style="padding-top:4px">
+                  <div class="setting-row">
+                    <div class="s-text"><div class="s-title">Share location with command</div><div class="s-desc">Live during active missions · visible to command center and your team</div></div>
+                    <label class="switch"><input type="checkbox" id="shareLocation" checked></label>
+                  </div>
+                  <div class="setting-row">
+                    <div class="s-text"><div class="s-title">Background tracking</div><div class="s-desc">Keep sharing GPS while this dashboard is open in a tab</div></div>
+                    <label class="switch"><input type="checkbox" id="backgroundTracking" checked></label>
+                  </div>
+                  <div class="setting-row">
+                    <div class="s-text"><div class="s-title">Visible to</div><div class="s-desc">Command center and my team</div></div>
+                    <span class="badge badge-blue">Own sector only</span>
+                  </div>
+                  <div class="setting-row">
+                    <div class="s-text"><div class="s-title">Check-in interval</div><div class="s-desc">How often command expects a field check-in</div></div>
+                    <select class="select" id="checkinInterval" style="width:130px;height:34px;font-size:12px">
+                      <option value="10">Every 10 min</option>
+                      <option value="15" selected>Every 15 min</option>
+                      <option value="30">Every 30 min</option>
+                    </select>
+                  </div>
+                  <div class="setting-row">
+                    <div class="s-text"><div class="s-title">Offline map pack</div><div class="s-desc">Mt. Lantin · 142 MB downloaded</div></div>
+                    <span class="badge badge-green">Ready</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card settings-section" data-section="security" style="display:none">
+                <div class="card-head"><h3>Security</h3><span class="hint">Local account</span></div>
+                <div class="card-body">
+                  <div class="setting-row">
+                    <div class="s-text"><div class="s-title">Password</div><div class="s-desc">Hashed with PBKDF2-SHA256 (120,000 iterations) when Web Crypto is available</div></div>
+                    <span class="badge badge-green">Protected</span>
+                  </div>
+                  <form id="passwordForm" class="form-grid" style="max-width:420px;margin-top:16px">
+                    <div class="field"><label for="curPw">Current password</label><input class="input" id="curPw" type="password" autocomplete="current-password"></div>
+                    <div class="form-grid cols-2">
+                      <div class="field"><label for="newPw">New password</label><input class="input" id="newPw" type="password" autocomplete="new-password"></div>
+                      <div class="field"><label for="confirmPw">Confirm new</label><input class="input" id="confirmPw" type="password" autocomplete="new-password"></div>
+                    </div>
+                    <div><button class="btn btn-primary" type="submit">Change password</button></div>
+                  </form>
+                  <div class="divider" style="margin:18px 0"></div>
+                  <div class="setting-row">
+                    <div class="s-text"><div class="s-title">Sign out everywhere</div><div class="s-desc">Clears the local session on this browser</div></div>
+                    <button class="btn btn-sm" data-action="logout">Sign out</button>
+                  </div>
+                  <div class="kv-list" style="margin-top:14px">
+                    <div class="kv"><span class="k">App version</span><span class="v">ResQCoord 2.4.1 · local build</span></div>
+                    <div class="kv"><span class="k">Storage</span><span class="v" id="storageMode">IndexedDB</span></div>
+                    <div class="kv"><span class="k">Session</span><span class="v">12 hours · local</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="status-bar">
+          <div class="left">
+            <span class="item"><span class="pulse-dot"></span> Live sync</span>
+            <span class="item" id="footerSync">Last sync just now</span>
+            <span class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> GPS ready</span>
+            <span class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Secure channel</span>
+          </div>
+          <div class="row" style="gap:12px;flex-wrap:wrap">
+            <span class="item" id="dataMode">Local database</span>
+            <span>ResQCoord 2.4.1</span>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="../assets/vendor/leaflet/leaflet.js"></script>
+  <script src="../assets/js/util.js"></script>
+  <script src="../assets/js/db.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script src="../assets/js/routing.js"></script>
+  <script src="../assets/js/mapkit.js"></script>
+  <script src="../assets/js/tracking.js"></script>
+  <script src="../assets/js/user-app.js"></script>
+</body>
+</html>
